@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Secure Login Demo (sql.js)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        background: #f5f7fb;
+      }
+      .card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 6px 24px rgba(10, 20, 40, 0.08);
+        width: 360px;
+      }
+      h2 {
+        margin: 0 0 12px 0;
+        font-size: 18px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        margin-top: 10px;
+      }
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #d7dde8;
+        margin-top: 6px;
+        box-sizing: border-box;
+      }
+      button {
+        margin-top: 14px;
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 0;
+        background: #0366d6;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .notice {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #334155;
+      }
+      .log {
+        margin-top: 12px;
+        padding: 10px;
+        border-radius: 8px;
+        background: #f0f4ff;
+        font-size: 13px;
+        color: #0b3a8c;
+        max-height: 120px;
+        overflow: auto;
+      }
+      small {
+        color: #64748b;
+        display: block;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Secure Login Demo (sql.js)</h2>
+      <small>Hint: username is <code>admin</code></small>
+      <small>Hint: use <code>--</code> to bypass password validation</small>
+      <form onSubmit="return login(event)">
+        <label
+          >Username
+          <input
+            id="username"
+            type="text"
+            placeholder="e.g. admin"
+            autocomplete="off"
+          />
+        </label>
+
+        <label
+          >Password
+          <input
+            id="password"
+            type="text"
+            placeholder="your password"
+            autocomplete="off"
+          />
+        </label>
+
+        <button id="loginBtn">Login</button>
+
+        <div class="notice">
+          <small>Note: This demo is local and for learning only.</small>
+        </div>
+
+        <p id="result"></p>
+        <div class="query-display">
+          <small>This is the SQL query being executed:</small>
+          <code id="query">
+            `SELECT * FROM users WHERE username = '${username}' AND password
+            ='${password}'`
+          </code>
+
+          <small>Example Query:</small>
+          <code>
+            SELECT * FROM users WHERE username = 'admin' AND password =
+            'admin123'
+          </code>
+          <small
+            >In SQL a comment is started with a double dash
+            <code>--</code></small
+          >
+          <small
+            >Any text after the double dash will be ignored by the
+            database.</small
+          >
+        </div>
+      </form>
+    </div>
+
+    <!-- sql.js (sqlite compiled to wasm). Using CDN; update if needed. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script>
+      let db; // initialize database variable
+      initDb(); // call initDb function
+
+      async function initDb() {
+        // initialie the sql.js library with configuration options
+        const SQL = await initSqlJs({
+          locateFile: (file) =>
+            `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
+        });
+        db = new SQL.Database(); // create a new database
+
+        db.run("CREATE TABLE users (username TEXT, password TEXT)"); // create a new table
+        db.run("INSERT INTO users VALUES ('admin', 'admin123')"); // insert a new row
+        /*
+        | username | password  |
+        |----------|-----------|
+        | admin    | admin123  |
+        */
+
+        console.log("Database initialized"); // log to console indicating that the database has been initialized
+      }
+
+      function login(event) {
+        event.preventDefault();
+
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        /*
+        | username | password  |
+        |----------|-----------|
+        | admin    | admin123  |    
+
+        */
+
+        const query = `SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`;
+
+        console.log("Executing:", query); // log to console the query being executed
+
+        try {
+          const result = db.exec(query); // execute the query
+
+          const msg =
+            result.length > 0 ? "✅ Login successful!" : "❌ Login failed";
+          document.getElementById("result").textContent = msg;
+        } catch (err) {
+          document.getElementById("result").textContent =
+            "❌ SQL error: " + err.message;
+        }
+
+        return false;
+      }
+    </script>
+  </body>
+</html>
